@@ -460,7 +460,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 513959971}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.24, y: -2.672, z: 0}
+  m_LocalPosition: {x: -7.58, y: -2.672, z: 0}
   m_LocalScale: {x: 0.1333447, y: 0.13336577, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -705,7 +705,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 606168949}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.04, y: -2.587, z: 0}
+  m_LocalPosition: {x: -6.71, y: -2.587, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -729,15 +729,15 @@ MonoBehaviour:
   walkSpeed: 3
   runSpeed: 6
   speedRampUpTime: 1
-  wallKickForce: 5
-  wallKickKey: 120
-  isWallKickEnabled: 0
+  jumpKey: 32
   groundCheck: {fileID: 404991254}
   groundCheckRadius: 0.2
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  isGrounded: 0
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!1 &855194874
 GameObject:
   m_ObjectHideFlags: 0
@@ -874,7 +874,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 855194874}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.231, y: -2.56, z: 0}
+  m_LocalPosition: {x: -7.19, y: -2.56, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

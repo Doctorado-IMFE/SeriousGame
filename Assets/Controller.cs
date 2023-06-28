@@ -1,4 +1,165 @@
-﻿/* using System.Collections;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Controller : MonoBehaviour
+{
+    [SerializeField] private float speed;
+    [SerializeField] private float jumpSpeed;
+    [SerializeField] private float walkSpeed = 3f;
+    [SerializeField] private float runSpeed = 6f;
+    [SerializeField] private float speedRampUpTime = 1f;
+    [SerializeField] private float groundDistance = 0.6f;
+    [SerializeField] private float wallCheckDistance = 0.5f;
+    [SerializeField] private LayerMask wallLayer;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private LayerMask groundLayer;
+
+    public float WallKickForce { get; private set; } = 2f;
+    public KeyCode WallKickKey { get; private set; } = KeyCode.Space;
+    public bool IsWallKickEnabled { get; private set; }
+    public bool IsTouchingWall { get; private set; }
+    public bool IsGrounded { get; private set; }
+
+    private Animator myAnimator;
+    private Rigidbody2D myRigidBody2D;
+    private SpriteRenderer mySpriteRenderer;
+    private float speedRampTimer = 0f;
+
+    private void Start()
+    {
+        myAnimator = GetComponent<Animator>();
+        myRigidBody2D = GetComponent<Rigidbody2D>();
+        mySpriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void Update()
+    {
+        CheckGrounded();
+        CheckIfTouchingWall();
+        Movement();
+        Jump();
+
+        if (Input.GetKey(WallKickKey) && IsTouchingWall)
+        {
+            PerformWallKick();
+        }        
+    }
+
+    private void Movement()
+    {
+        float currentMovement = Input.GetAxis("Horizontal");
+
+        if (currentMovement != 0 && !myAnimator.GetCurrentAnimatorStateInfo(0).IsName("WallKick"))
+        {
+            speedRampTimer += Time.deltaTime;
+            float currentSpeed = Mathf.Lerp(walkSpeed, runSpeed, speedRampTimer / speedRampUpTime);
+            myAnimator.SetFloat("Speed", currentSpeed);
+            transform.Translate(new Vector2(currentMovement * currentSpeed * Time.deltaTime, 0));
+
+            // Flip the sprite in the direction of movement
+            mySpriteRenderer.flipX = currentMovement < 0;
+        }
+        else
+        {
+            speedRampTimer = 0f;
+            myAnimator.SetFloat("Speed", 0f);
+        }
+    }
+
+    private void Jump()
+    {
+        if (IsGrounded && Input.GetKeyDown(KeyCode.Space))
+        {
+            myAnimator.SetTrigger("Jump");
+            myRigidBody2D.AddForce(new Vector2(0, jumpSpeed), ForceMode2D.Impulse);
+        }
+
+        if (myRigidBody2D.velocity.y < 0)
+        {
+            myAnimator.SetBool("Land", true);
+        }
+        else
+        {
+            myAnimator.SetBool("Land", false);
+        }
+    }
+
+    private void PerformWallKick()
+    {
+        if (!IsGrounded && IsTouchingWall && Input.GetKey(WallKickKey) && ((Input.GetAxis("Horizontal") > 0 && Physics2D.Raycast(transform.position, Vector2.right, wallCheckDistance, wallLayer)) || (Input.GetAxis("Horizontal") < 0 && Physics2D.Raycast(transform.position, Vector2.left, wallCheckDistance, wallLayer))))
+        {
+            // Check which side the wall is on
+            if (Physics2D.Raycast(transform.position, Vector2.right, wallCheckDistance, wallLayer))
+            {
+                // Apply force in opposite direction to wall (left) using Rigidbody2D
+                myRigidBody2D.AddForce(new Vector2(-0.5f, 1.5f));
+
+                // Trigger Wall Kick animation
+                myAnimator.SetTrigger("WallKick");
+                // Stop the jump animation
+                myAnimator.SetBool("Jump", false);
+                myAnimator.SetBool("Land", false);
+                myAnimator.SetFloat("Speed", 0f); // Stop run animation
+            }
+            else if (Physics2D.Raycast(transform.position, Vector2.left, wallCheckDistance, wallLayer))
+            {
+                // Apply force in opposite direction to wall (right) using Rigidbody2D
+                myRigidBody2D.AddForce(new Vector2(0.5f, 1.5f));
+
+                // Trigger Wall Kick animation
+                myAnimator.SetTrigger("WallKick");
+                // Stop the jump animation
+                myAnimator.SetBool("Jump", false);
+                myAnimator.SetBool("Land", false);
+                myAnimator.SetFloat("Speed", 0f); // Stop run animation
+            } else  myRigidBody2D.AddForce(new Vector2(0.0f, 0.0f));
+        }
+        else  myRigidBody2D.AddForce(new Vector2(0.0f, 0.0f));
+    }
+
+
+    private void CheckGrounded()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, -Vector2.up, groundDistance, groundLayer);
+        Debug.DrawRay(transform.position, -Vector2.up * groundDistance, Color.red);
+        IsGrounded = hit.collider != null;
+
+        if (IsGrounded)
+        {
+            myAnimator.SetBool("Land", false);
+        }
+    }
+
+    private void CheckIfTouchingWall()
+    {
+        RaycastHit2D hitRight = Physics2D.Raycast(transform.position, Vector2.right, wallCheckDistance, wallLayer);
+        RaycastHit2D hitLeft = Physics2D.Raycast(transform.position, Vector2.left, wallCheckDistance, wallLayer);
+        Debug.DrawRay(transform.position, Vector2.right * wallCheckDistance, Color.blue);
+        Debug.DrawRay(transform.position, Vector2.left * wallCheckDistance, Color.blue);
+        IsTouchingWall = hitRight.collider != null || hitLeft.collider != null;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Wall"))
+        {
+            IsWallKickEnabled = true;
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Wall"))
+        {
+            IsWallKickEnabled = false;
+        }
+    }
+}
+
+
+
+/* using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -106,7 +267,7 @@ public class Controller : MonoBehaviour
 
 
 
-using System.Collections;
+/* using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -124,7 +285,9 @@ public class Controller : MonoBehaviour
     public float wallKickForce = 5f; // Fuerza del impulso de Wall Kick
     public KeyCode wallKickKey = KeyCode.Space; // Tecla que activa el Wall Kick
     public bool isWallKickEnabled = false; // Indica si el personaje puede realizar Wall Kick
-    
+    public bool isTouchingWall = false; // Indica si el personaje está tocando una pared
+    [SerializeField] float wallCheckDistance = 0.5f; // Puedes ajustar este valor según sea necesario
+    [SerializeField] LayerMask wallLayer; // Capa de las paredes
 
     [SerializeField] Transform groundCheck;
     //[SerializeField] float groundCheckRadius = 0.2f;
@@ -145,10 +308,11 @@ public class Controller : MonoBehaviour
     void Update()
     {
         CheckGrounded();
+        CheckIfTouchingWall(); // Don't forget to check if touching wall
         Movement();
         Jump();
         //WALL KICK
-        if (Input.GetKeyDown(wallKickKey) && isWallKickEnabled)
+        if (Input.GetKeyDown(wallKickKey) && isTouchingWall)
         {
             // Realizar Wall Kick
             PerformWallKick();
@@ -197,9 +361,27 @@ void Jump()
 
 private void PerformWallKick()
     {
-        // Aplicar impulso en dirección opuesta a la pared utilizando el componente Rigidbody2D
-        Vector2 kickDirection = -transform.right; // Cambiar a la dirección adecuada según el diseño de tu juego
-        myRigidBody2D.velocity = kickDirection * wallKickForce;
+        // Comprobar en qué lado está la pared
+    if (Physics2D.Raycast(transform.position, Vector2.right, wallCheckDistance, wallLayer))
+    {
+        // Aplicar impulso en la dirección opuesta a la pared (izquierda) utilizando el componente Rigidbody2D
+        myRigidBody2D.AddForce(new Vector2(-wallKickForce, wallKickForce));
+
+        // Activar la animación de Wall Kick
+        myAnimator.SetTrigger("WallKick");
+        // Desactivar la animación de salto
+        myAnimator.SetBool("Jump", false);
+    }
+    else if (Physics2D.Raycast(transform.position, Vector2.left, wallCheckDistance, wallLayer))
+    {
+        // Aplicar impulso en la dirección opuesta a la pared (derecha) utilizando el componente Rigidbody2D
+        myRigidBody2D.AddForce(new Vector2(wallKickForce, wallKickForce));
+
+        // Activar la animación de Wall Kick
+        myAnimator.SetTrigger("WallKick");
+        // Desactivar la animación de salto
+        myAnimator.SetBool("Jump", false);
+    }
     }
 
 void CheckGrounded()
@@ -216,14 +398,23 @@ void CheckGrounded()
     if (isGrounded)
     {
         myAnimator.SetBool("Land", false);
-    }
-    /* isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-    if (isGrounded)
-    {
-        myAnimator.SetBool("Land", false);
-    } */
+    }    
 }
+
+private void CheckIfTouchingWall()
+    {
+        // Crea un raycast hacia la derecha desde la posición del personaje
+        RaycastHit2D hitRight = Physics2D.Raycast(transform.position, Vector2.right, wallCheckDistance, wallLayer);
+        // Crea un raycast hacia la izquierda desde la posición del personaje
+        RaycastHit2D hitLeft = Physics2D.Raycast(transform.position, Vector2.left, wallCheckDistance, wallLayer);
+
+        // Dibuja los raycasts en el editor de Unity
+        Debug.DrawRay(transform.position, Vector2.right * wallCheckDistance, Color.blue);
+        Debug.DrawRay(transform.position, Vector2.left * wallCheckDistance, Color.blue);
+
+        // Si alguno de los raycasts golpea una pared, entonces el personaje está tocando una pared
+        isTouchingWall = hitRight.collider != null || hitLeft.collider != null;
+    }
 
  private void OnCollisionEnter2D(Collision2D collision)
     {
@@ -243,4 +434,4 @@ void CheckGrounded()
         }
     }
 
-}
+} */
